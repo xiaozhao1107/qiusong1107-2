@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>六格翻牌小游戏</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #f9f9f9;
+  padding: 20px;
+}
+
+/* 管理员入口（隐藏小按钮） */
+#adminEnter {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: 25px;
+  height: 25px;
+  background: transparent;
+  border: none;
+  font-size: 0;
+  cursor: pointer;
+  z-index: 100;
+}
+
+/* 密码锁屏 */
+.lock-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  flex-direction: column;
+  color: white;
+}
+.lock-screen.show {
+  display: flex;
+}
+.lock-box {
+  background: #fff;
+  padding: 35px;
+  border-radius: 14px;
+  color: #333;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+}
+.lock-box input {
+  padding: 10px 14px;
+  font-size: 16px;
+  margin: 12px 0;
+  width: 220px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+.lock-box button {
+  padding: 10px 20px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+/* 后台界面 */
+.admin-panel {
+  max-width: 600px;
+  margin: 0 auto 30px;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  display: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+.admin-panel.show {
+  display: block;
+}
+.admin-panel h3 {
+  margin-bottom: 20px;
+  color: red;
+  text-align: center;
+}
+.upload-item {
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.upload-item label {
+  width: 35px;
+  font-weight: bold;
+  font-size: 16px;
+}
+.upload-item input[type="file"] {
+  flex: 1;
+  padding: 4px;
+}
+.upload-item img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #eee;
+}
+.admin-btn {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 100%;
+}
+#msg {
+  margin-top: 15px;
+  color: #00b500;
+  font-weight: bold;
+  text-align: center;
+  display: none;
+  font-size: 16px;
+}
+#msg.show {
+  display: block;
+}
+
+/* 游戏界面 */
+.game {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+.game h2 {
+  color: red;
+  margin-bottom: 25px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.card {
+  aspect-ratio: 1 / 1;
+  background: red;
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  transition: 0.3s;
+}
+.card:active {
+  transform: scale(0.96);
+}
+.card.flipped {
+  background: white;
+  border: 2px solid red;
+  color: transparent;
+}
+.card img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  display: none;
+}
+.card.flipped img {
+  display: block;
+}
+
+/* 放大预览 */
+.preview {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.92);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  flex-direction: column;
+  gap: 20px;
+}
+.preview.show {
+  display: flex;
+}
+.preview img {
+  max-width: 92%;
+  max-height: 75%;
+  border: 3px solid white;
+  border-radius: 10px;
+  object-fit: contain;
+  background: #000;
+}
+.preview .close {
+  position: absolute;
+  top: 25px;
+  right: 25px;
+  color: white;
+  font-size: 40px;
+  cursor: pointer;
+  line-height: 1;
+}
+.scan-btn {
+  padding: 12px 26px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+/* 重置按钮 */
+#reset {
+  margin-top: 30px;
+  padding: 14px 30px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 17px;
+  cursor: pointer;
+  display: none;
+}
+#reset.show {
+  display: inline-block;
+}
+</style>
+</head>
+<body>
+
+<!-- 管理员隐藏入口 -->
+<button id="adminEnter" onclick="showLock()">管理</button>
+
+<!-- 密码锁屏 -->
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-box">
+    <h3>管理员后台</h3>
+    <input type="password" id="adminPwd" placeholder="请输入管理密码">
+    <br>
+    <button onclick="checkPwd()">进入后台</button>
+  </div>
+</div>
+
+<!-- 后台上传界面 -->
+<div class="admin-panel" id="adminPanel">
+  <h3>六格翻牌 - 图片上传</h3>
+  
+  <div class="upload-item">
+    <label>1:</label>
+    <input type="file" accept="image/*" onchange="uploadImg(0,this)">
+    <img id="prev0">
+  </div>
+  <div class="upload-item">
+    <label>2:</label>
+    <input type="file" accept="image/*" onchange="uploadImg(1,this)">
+    <img id="prev1">
+  </div>
+  <div class="upload-item">
+    <label>3:</label>
+    <input type="file" accept="image/*" onchange="uploadImg(2,this)">
+    <img id="prev2">
+  </div>
+  <div class="upload-item">
+    <label>4:</label>
+    <input type="file" accept="image/*" onchange="uploadImg(3,this)">
+    <img id="prev3">
+  </div>
+  <div class="upload-item">
+    <label>5:</label>
+    <input type="file" accept="image/*" onchange="uploadImg(4,this)">
+    <img id="prev4">
+  </div>
+  <div class="upload-item">
+    <label>6:</label>
+    <input type="file" accept="image/*" onchange="uploadImg(5,this)">
+    <img id="prev5">
+  </div>
+
+  <button class="admin-btn" onclick="saveAll()">确定上传并应用</button>
+  <div id="msg">上传成功！图片已应用到翻牌背面</div>
+</div>
+
+<!-- 游戏主界面 -->
+<div class="game">
+  <h2>六格翻牌小游戏</h2>
+  <div class="grid" id="cardGrid"></div>
+  <button id="reset">重新开始游戏</button>
+</div>
+
+<!-- 放大预览 -->
+<div class="preview" id="preview">
+  <div class="close" onclick="closePreview()">&times;</div>
+  <img id="previewImg" src="">
+  <button class="scan-btn" onclick="wechatScan()">微信扫一扫</button>
+</div>
+
+<script>
+const ADMIN_PASSWORD = '123456';
+let cardImages = JSON.parse(localStorage.getItem('cardImages')) || ['','','','','',''];
+let flipCount = 0;
+const total = 6;
+
+// 玩家一打开直接进游戏
+initGame();
+
+// 显示管理员锁屏
+function showLock() {
+  document.getElementById('lockScreen').classList.add('show');
+}
+
+// 密码验证
+function checkPwd() {
+  let p = document.getElementById('adminPwd').value;
+  if(p === ADMIN_PASSWORD){
+    document.getElementById('lockScreen').classList.remove('show');
+    document.getElementById('adminPanel').classList.add('show');
+    for(let i=0;i<total;i++){
+      document.getElementById(`prev${i}`).src = cardImages[i];
+    }
+  }else{
+    alert('密码错误');
+  }
+}
+
+// 上传图片
+function uploadImg(index, input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    cardImages[index] = e.target.result;
+    document.getElementById(`prev${index}`).src = e.target.result;
+  }
+  reader.readAsDataURL(file);
+}
+
+// 保存
+function saveAll() {
+  localStorage.setItem('cardImages', JSON.stringify(cardImages));
+  const msg = document.getElementById('msg');
+  msg.classList.add('show');
+  setTimeout(()=>{
+    msg.classList.remove('show');
+    document.getElementById('adminPanel').classList.remove('show');
+    initGame();
+  },1600);
+}
+
+// 初始化游戏
+function initGame() {
+  const grid = document.getElementById('cardGrid');
+  grid.innerHTML = '';
+  flipCount = 0;
+  document.getElementById('reset').classList.remove('show');
+
+  for(let i=0;i<total;i++){
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerText = i+1;
+    card.dataset.i = i;
+
+    const img = document.createElement('img');
+    img.src = cardImages[i];
+    card.appendChild(img);
+
+    card.onclick = ()=>{
+      if(card.classList.contains('flipped')) return;
+      card.classList.add('flipped');
+      flipCount++;
+      if(flipCount >= total){
+        document.getElementById('reset').classList.add('show');
+      }
+    }
+    grid.appendChild(card);
+  }
+}
+
+// 放大
+document.addEventListener('click', e=>{
+  if(e.target.tagName === 'IMG' && e.target.parentElement.classList.contains('flipped')){
+    document.getElementById('previewImg').src = e.target.src;
+    document.getElementById('preview').classList.add('show');
+  }
+})
+
+function closePreview() {
+  document.getElementById('preview').classList.remove('show');
+}
+
+// 扫一扫
+function wechatScan() {
+  alert('打开微信 → 发现 → 扫一扫，对准图片即可');
+}
+
+// 重置
+document.getElementById('reset').onclick = initGame;
+</script>
+</body>
+</html>
